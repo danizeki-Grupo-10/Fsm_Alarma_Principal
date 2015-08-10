@@ -1,0 +1,13 @@
+`timescale 1ns / 1ps
+
+module Nexis2(
+    input wire Humo_Sum, Corriente_Sum, Switch_Sum, TAdv_DecoSum, TEmerg_DecoSum, AdvCtrl_Sum, EmergCtrl_Sum, 
+	 output wire Emerg_CtrlSum, Adv_CtrlSum, D_SwitchDeco 
+	 );
+	 
+// Suma las señales de entada, para procesarlas en estados 
+assign D_SwitchDeco = TEmerg_DecoSum|Switch_Sum ;
+assign Emerg_CtrlSum = (EmergCtrl_Sum)&(TEmerg_DecoSum|Switch_Sum|Corriente_Sum|Humo_Sum|TAdv_DecoSum) ; 
+assign Adv_CtrlSum = (AdvCtrl_Sum)&(TEmerg_DecoSum|Switch_Sum|Corriente_Sum|Humo_Sum|TAdv_DecoSum) ;
+
+endmodule 
