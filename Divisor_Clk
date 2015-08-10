@@ -1,0 +1,26 @@
+`timescale 1ns / 1ps
+
+module DivisorClk #(parameter Bits_ContadorDiv = 18)(
+	input wire Clk_Df, Reset_Df, 
+	output reg Clk_Df_out = 1'b0
+    );
+
+//	Genera un Divisor de Frecuencia 
+reg [Bits_ContadorDiv-1:0] Counter_Df = 18'd0;
+
+always@(posedge Clk_Df) begin
+		if (Reset_Df == 1'b1)
+			begin
+				Counter_Df <= 18'd0;
+				Clk_Df_out <= 1'b0;
+			end
+		else
+			if(Counter_Df == 18'd262143) //esto genera un Reloj de 191 Hz desde 100MHz 
+				begin
+					Counter_Df <= 18'd0;
+					Clk_Df_out <= ~Clk_Df_out;
+				end
+			else
+				Counter_Df <= Counter_Df + 1'b1;	end
+	
+endmodule
