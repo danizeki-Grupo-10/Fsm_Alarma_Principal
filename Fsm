@@ -1,0 +1,218 @@
+`timescale 1ns / 1ps
+
+module Fsm #(parameter Bits_Temp = 6, BitsIN_Segmentos = 8, Palabra_UD = 16, N_Anodos_Seg = 4, Size_Fsm = 2, Size_Fsm2 = 2)(
+	input wire Clk_Fsm, Reset_Fsm, Apagador_Fsm,
+	input wire AdvCtrl_Fsm, EmergCtrl_Fsm,
+	input wire [Bits_Temp-1:0]I_Ss_Fsm,
+	
+	output reg Adv_Fsm, Emerg_Fsm, 	
+	output reg [BitsIN_Segmentos-1:0]Q_7S_Fsm, 
+	output reg [N_Anodos_Seg-1:0]Anodos_7S_Fsm
+	 );
+	 
+// Separa bus UD(Unidades y Decenas de Temperatura) en dos buses U y D
+wire [Palabra_UD-1:0]SsUD_7S ; 
+wire [BitsIN_Segmentos-1:0] SsU_7S ; 		
+wire [BitsIN_Segmentos-1:0] SsD_7S ;
+assign SsU_7S[BitsIN_Segmentos-1:0] = SsUD_7S[7:0];
+assign SsD_7S[BitsIN_Segmentos-1:0] = SsUD_7S[15:8]; 
+
+// Crea un estado Ok 
+wire OkCtrl_Fsm ; 
+nor(OkCtrl_Fsm, AdvCtrl_Fsm, EmergCtrl_Fsm) ; 
+
+// Parametriza Fsm(Maquina de estados principal) 
+reg [Size_Fsm-1 :0]x,xp ;
+parameter [Size_Fsm-1:0] Ok_State = 2'b00, Adv_State = 2'b01, Emerg_State = 2'b10, Off_State = 2'b11 ; 
+
+// Parametriza Fsm(Maquina de estados secundaria) 
+reg [Size_Fsm2-1:0] y,yp ;
+parameter [Size_Fsm2-1:0] Ss1 = 2'd0, Ss2 = 2'd1, Ss3 = 2'd2, Ss4 = 2'd3  ;
+
+// Instancia Decodificador de la temperatura en codigo 7 Segmentos 
+Deco_7s Deco_7Segmentos (
+    .I_Ss(I_Ss_Fsm),  
+    .SsUD(SsUD_7S)
+    );
+ 
+//// ****************** Estructura de Fsm ****************** ////
+
+// Secuencial
+always@(posedge Clk_Fsm, posedge Reset_Fsm)
+	begin
+		if(Reset_Fsm == 1'b1) 
+			begin 
+			x <= Ok_State ;
+			y <= Ss1 ; 
+			 end
+		else
+			begin
+			x <= xp ;
+			y <= yp ; end 
+	end	
+	
+// Combinacional 
+always@*
+	begin
+		xp = x ; 
+		yp = y ;				// Inicializa variables 
+		Adv_Fsm = 1'b0 ;
+		Emerg_Fsm = 1'b0 ;
+		Anodos_7S_Fsm = 4'b1111;
+		Q_7S_Fsm = 8'b11111110 ;
+			case(x)						// Resuelve Estados de Fsm principal (Emerg_State, Adv_State, Ok_State, Off_State)
+				Emerg_State : 
+					if(EmergCtrl_Fsm == 1'b1)
+						begin 
+							Adv_Fsm = 1'b0 ;
+							Emerg_Fsm = 1'b1 ; 
+							Anodos_7S_Fsm = 4'b1111; 
+							yp = y ;
+						case(y)			// Resuelve Estados de Fsm secundaria	(Ss1, Ss2, Ss3, Ss4)
+							Ss1 : 		// Estos estados son incondicionales y activan un display n Segmentos a la vez, 
+							begin 		// tras cada flanco positivo de reloj
+								Q_7S_Fsm = SsU_7S ; 			// Envia el digito de UNIDADES de temp al primer n Segmentos
+								Anodos_7S_Fsm = 4'b1110;	// Activa unicamente el n Segmentos que corresponde a unidades
+								yp = Ss2 ; 						// Pasa al estado proximo 
+								end 
+							Ss2 : 
+							begin
+								Q_7S_Fsm = SsD_7S ; 			// Envia el digito de DECENAS de temp al primer n Segmentos
+								Anodos_7S_Fsm = 4'b1101;	// Activa unicamente el n Segmentos que corresponde a decenas 
+								yp = Ss3 ;
+							end
+							Ss3 : 
+							begin 
+							  Q_7S_Fsm = 8'b01100001 ; // Envia una E, codificada en 7 Segmentos, representa EMERGENCIA 
+							  Anodos_7S_Fsm = 4'b1011;
+							  yp = Ss4 ;
+							end 
+							Ss4 :
+							begin  
+							 Q_7S_Fsm = 8'b10011111 ; // Envia un 1, codificado en 7 Segmentos, representa ESTADO 1
+							 Anodos_7S_Fsm = 4'b0111;
+							 yp = Ss1 ;
+							end 						
+					endcase
+				end 
+					else
+							xp = Adv_State ; 
+													
+				Adv_State : 
+				if(AdvCtrl_Fsm == 1'b1)
+						begin 
+						Adv_Fsm = 1'b1;  
+						Emerg_Fsm = 1'b0 ; 
+						Anodos_7S_Fsm = 4'b1111; 
+						yp = y ;
+							case(y)
+								Ss1 : 
+										begin 
+										 Q_7S_Fsm = SsU_7S ; 
+										 Anodos_7S_Fsm = 4'b1110; 
+										 yp = Ss2 ; 			
+										end 
+								Ss2 : 
+										begin
+										 Q_7S_Fsm = SsD_7S ;
+											Anodos_7S_Fsm = 4'b1101; 		
+										  yp = Ss3 ;
+										end
+								Ss3 : 
+										begin 
+										 Q_7S_Fsm = 8'b00010001 ; // Envia una A, codificada en 7 Segmentos, representa Advertencia 
+										 Anodos_7S_Fsm = 4'b1011; 
+										  yp = Ss4 ;
+										end 
+								Ss4 :
+										begin  
+										 Q_7S_Fsm = 8'b00100101 ; // // Envia un 2, codificado en 7 Segmentos, representa ESTADO 2
+										 Anodos_7S_Fsm = 4'b0111; 
+										 yp = Ss1 ;
+										end 						
+						endcase 
+									end		
+							else 
+								xp = Ok_State; 
+							
+				Ok_State :   
+							if(OkCtrl_Fsm == 1'b1)
+								begin 
+									Adv_Fsm = 1'b0 ; 
+									Emerg_Fsm = 1'b0 ; 
+									Anodos_7S_Fsm = 4'b1111; 
+									yp = y ;
+									case(y)
+										Ss1 : 
+												begin 
+												 Q_7S_Fsm = SsU_7S ; 
+												 Anodos_7S_Fsm = 4'b1110; 
+												 yp = Ss2 ; 			
+												end 
+										Ss2 : 
+												begin
+												 Q_7S_Fsm = SsD_7S ; 
+												 Anodos_7S_Fsm = 4'b1101; 
+												  yp = Ss3 ;
+												end
+										Ss3 : 
+												begin 
+												 Q_7S_Fsm = 8'b00000011 ; // Envia una O, codificada en 7 Segmentos, representa Ok 
+												 Anodos_7S_Fsm = 4'b1011; 
+												  yp = Ss4 ;
+												end 
+										Ss4 :
+												begin  
+												 Q_7S_Fsm = 8'b00001101 ; // Envia un 3, codificado en 7 Segmentos, representa ESTADO 3 
+												 Anodos_7S_Fsm = 4'b0111; 
+												 yp = Ss1 ;
+												end 						
+										endcase
+							end 
+				
+							else
+								xp = Off_State;   
+								
+						Off_State :  // Se apaga el sistema
+										if(Apagador_Fsm == 1'b1) begin 	
+											Adv_Fsm = 1'b0 ; 
+											Emerg_Fsm = 1'b0 ;
+											Anodos_7S_Fsm = 4'b1111;  
+											yp = y ; 
+												case(y)
+													Ss1 : 
+															begin 													
+															 Q_7S_Fsm = 8'b11111111 ;
+															 Anodos_7S_Fsm = 4'b1110; 
+															 yp = Ss2 ; 			
+															end 
+													Ss2 : 
+															begin
+															Q_7S_Fsm = 8'b11111111 ;
+															 Anodos_7S_Fsm = 4'b1101; 
+															  yp = Ss3 ;
+															end
+													Ss3 : 
+															begin 
+															Q_7S_Fsm = 8'b11111111 ;
+															 Anodos_7S_Fsm = 4'b1011; 
+															  yp = Ss4 ;
+															end 
+													Ss4 :
+															begin  
+															 Q_7S_Fsm = 8'b11111111 ;
+															 Anodos_7S_Fsm = 4'b0111; 
+															 yp = Ss1 ;
+															end 						
+													endcase
+											end 
+										
+										else 	
+										xp = Emerg_State ;  
+										
+						endcase 
+						
+					end
+
+endmodule 
+				
