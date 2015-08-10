@@ -1,0 +1,58 @@
+`timescale 1ns / 1ps
+
+module Alarma_Taller_Digital_I #(parameter BitsIN_Segmentos =8, N_Anodos_Seg = 4, Bits_Temp = 6) (
+	input wire Clk_Alarma, Humo_Alarma, Corriente_Alarma, Switch_Alarma,  Apagador,
+	input wire [Bits_Temp-1:0]Temp_Alarma,
+	output wire AdvOut_Alarma, EmergOut_Alarma ,
+	output wire [BitsIN_Segmentos-1:0]Q_7S_Alarma,
+	output wire [N_Anodos_Seg-1:0]Anodos_Alarma
+	);
+			// ***** Modulo principal del Sistema de Alarma ***** //
+// Las ENTRADAS que soporta : 
+				// 1 Bit de Humo 
+				// 1 Bit de Corriente
+				// 1 Bit de Activación Manual
+				// 6 Bits de Temperatura 
+						
+// Las SALIDAS de la Alarma:
+				// 1 LED de Advertencia del Sistema
+				// 1 LED de Emergencia del Sistema
+				// Visualizacion de Temperatura en un 7 Segmentos
+				// Visualizacion de Numero de Estado de Fsm en 7 Segmentos
+				// Visualizacion de letra (E, A, O) en funcion del Estado Presente del Sistema en 7 Segmentos
+				// Un Reseteador a estado Ok del Sistema
+				// Un Apagador del Sistema
+				
+wire Adv_Alarma, Emerg_Alarma, Clk_Mod_Alarma; 
+
+DivisorClk DivisorFrec (
+    .Clk_Df(Clk_Alarma), 
+    .Reset_Df(1'b0), 
+    .Clk_Df_out(Clk_Mod_Alarma)
+    );
+
+Ctrl_Sum_DecoT CSDT (
+    .I_DT_CSDT(Temp_Alarma), 
+    .Humo_CSDT(Humo_Alarma), 
+    .Corriente_CSDT(Corriente_Alarma), 
+    .Switch_CSDT(Switch_Alarma), 
+    .Adv_Ctrl_CSDT(Adv_Alarma), 
+    .Emerg_Ctrl_CSDT(Emerg_Alarma)
+    );
+
+Fsm Fsm_Alarma (
+    .Clk_Fsm(Clk_Mod_Alarma), 
+    .Reset_Fsm(1'b0), 
+	 .Apagador_Fsm(Apagador),
+    .AdvCtrl_Fsm(Adv_Alarma), 
+    .EmergCtrl_Fsm(Emerg_Alarma), 
+    .Adv_Fsm(AdvOut_Alarma), 
+    .Emerg_Fsm(EmergOut_Alarma), 
+    .I_Ss_Fsm(Temp_Alarma), 
+    .Q_7S_Fsm(Q_7S_Alarma), 
+	 .Anodos_7S_Fsm(Anodos_Alarma)
+    );
+	 
+	 
+
+endmodule
