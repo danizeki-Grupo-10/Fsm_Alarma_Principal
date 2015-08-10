@@ -1,0 +1,13 @@
+`timescale 1ns / 1ps
+
+module Procesamiento_Senal(
+    input wire D_Ctrl,C_Ctrl,B_Ctrl,A_Ctrl, 
+    output wire Emerg_Ctrl,
+	 output wire Adv_Ctrl
+    );
+
+// Procesa las señales de entrada, y define los Estados de Emergencia y Advertencia
+assign Adv_Ctrl = (~D_Ctrl&C_Ctrl&B_Ctrl&~A_Ctrl) | (~D_Ctrl&~C_Ctrl&B_Ctrl&~A_Ctrl) | (~D_Ctrl&~C_Ctrl&~B_Ctrl&A_Ctrl) | (~D_Ctrl&C_Ctrl&~B_Ctrl&~A_Ctrl) ;
+assign Emerg_Ctrl = (D_Ctrl)|(C_Ctrl&B_Ctrl)|(C_Ctrl&A_Ctrl)|(B_Ctrl&A_Ctrl) ;
+
+endmodule
