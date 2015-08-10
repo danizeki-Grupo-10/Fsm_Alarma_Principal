@@ -1,0 +1,85 @@
+`timescale 1ns / 1ps
+
+module Deco_Temp #(parameter Bus_Estados = 3, parameter Bits_Temp = 6 ) (
+	input wire [Bits_Temp-1:0]I_DT,
+	output reg [Bus_Estados-1:0]Q_DT  // Genera una palabra de estados: ok,adv,emerg
+   );
+  
+parameter 
+Ok_DT = 3'b100 ,
+Adv_DT = 3'b010 , 
+Emerg_DT = 3'b001 ;	
+
+// Decodifica la temperatura en 3 Estados
+always@(I_DT)
+	begin		
+			case(I_DT)
+				0 : Q_DT = Ok_DT ;
+				1 : Q_DT = Ok_DT ;
+				2 : Q_DT = Ok_DT ;
+				3 : Q_DT = Ok_DT ;
+				4 : Q_DT = Ok_DT ;
+				5 : Q_DT = Ok_DT ;
+				6 : Q_DT = Ok_DT ;
+				7 : Q_DT = Ok_DT ;
+				8 : Q_DT = Ok_DT ;
+				9 : Q_DT = Ok_DT ;
+				10 : Q_DT = Ok_DT ;
+				11 : Q_DT = Ok_DT ;
+				12 : Q_DT = Ok_DT ;
+				13 : Q_DT = Ok_DT ;
+				14 : Q_DT = Ok_DT ;
+				15 : Q_DT = Ok_DT ;
+				16 : Q_DT = Ok_DT ;
+				17 : Q_DT = Ok_DT ;
+				18 : Q_DT = Ok_DT ;
+				19 : Q_DT = Ok_DT ;
+				20 : Q_DT = Ok_DT ;
+				21 : Q_DT = Ok_DT ;
+				22 : Q_DT = Ok_DT ;
+				23 : Q_DT = Ok_DT ;
+				24 : Q_DT = Ok_DT ;
+				25 : Q_DT = Ok_DT ;
+				26 : Q_DT = Ok_DT ;
+				27 : Q_DT = Ok_DT ;
+				28 : Q_DT = Ok_DT ;
+				29 : Q_DT = Ok_DT ;
+				30 : Q_DT = Ok_DT ;
+				31 : Q_DT = Ok_DT ;
+				32 : Q_DT = Ok_DT ;
+				33 : Q_DT = Ok_DT ;
+				34 : Q_DT = Ok_DT ;
+				35 : Q_DT = Adv_DT ;
+				36 : Q_DT = Adv_DT ;
+				37 : Q_DT = Adv_DT ;
+				38 : Q_DT = Adv_DT ;
+				39 : Q_DT = Adv_DT ;
+				40 : Q_DT = Adv_DT ;
+				41 : Q_DT = Adv_DT ;
+				42 : Q_DT = Adv_DT ;
+				43 : Q_DT = Adv_DT ;
+				44 : Q_DT = Adv_DT ; 
+				45 : Q_DT = Adv_DT ;
+				46 : Q_DT = Adv_DT ;
+				47 : Q_DT = Adv_DT ;
+				48 : Q_DT = Adv_DT ;
+				49 : Q_DT = Adv_DT ;
+				50 : Q_DT = Emerg_DT ;
+				51 : Q_DT = Emerg_DT ;
+				52 : Q_DT = Emerg_DT ;
+				53 : Q_DT = Emerg_DT ;
+				54 : Q_DT = Emerg_DT ;
+				55 : Q_DT = Emerg_DT ;
+				56 : Q_DT = Emerg_DT ;
+				57 : Q_DT = Emerg_DT ;
+				58 : Q_DT = Emerg_DT ;
+				59 : Q_DT = Emerg_DT ;
+				60 : Q_DT = Emerg_DT ;
+				61 : Q_DT = Emerg_DT ;
+				62 : Q_DT = Emerg_DT ;
+				default : Q_DT = Emerg_DT ;
+
+			endcase
+	end
+		
+endmodule
