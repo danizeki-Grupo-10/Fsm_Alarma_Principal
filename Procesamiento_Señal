@@ -1,0 +1,43 @@
+`timescale 1ns / 1ps
+
+module Ctrl_Sum_DecoT #(parameter Bits_Temp = 6, Bus_Estados = 3) (
+      input wire [Bits_Temp-1:0]I_DT_CSDT, 
+		input wire Humo_CSDT, Corriente_CSDT, Switch_CSDT, 
+		output wire Adv_Ctrl_CSDT, Emerg_Ctrl_CSDT
+				);
+// Switch_CSDT : Activador Manual del circuito
+
+// Instancia los modulos de Procesamiento_Senal, Deco de Temp, Sumadores de entradas,
+// Su importancia es que las Señales del Deco y suma de señales de entrada, 
+// las transfiere a Procesamiento para que pueda dar los Estados del Sistema. 
+wire D_wire, Adv_wire, Emerg_wire ;
+wire [Bus_Estados-1:0]Q_DT_CSDT ;
+
+Procesamiento_Senal Ctrl (
+    .D_Ctrl(D_wire), 
+    .C_Ctrl(Corriente_CSDT), 
+    .B_Ctrl(Q_DT_CSDT[1]), 
+    .A_Ctrl(Humo_CSDT), 
+    .Emerg_Ctrl(Emerg_wire), 
+    .Adv_Ctrl(Adv_wire)
+    );
+	 
+Deco_Temp DT (
+    .I_DT(I_DT_CSDT), 
+    .Q_DT(Q_DT_CSDT) 
+    );
+	 
+Nexis2 Sumadores (
+    .Humo_Sum(Humo_CSDT), 
+	 .TAdv_DecoSum(Q_DT_CSDT[1]),
+    .Corriente_Sum(Corriente_CSDT), 
+    .Switch_Sum(Switch_CSDT), 
+    .TEmerg_DecoSum(Q_DT_CSDT[0]), 
+	 .D_SwitchDeco(D_wire),
+    .AdvCtrl_Sum(Adv_wire), 
+    .EmergCtrl_Sum(Emerg_wire),  
+    .Emerg_CtrlSum(Emerg_Ctrl_CSDT), 
+    .Adv_CtrlSum(Adv_Ctrl_CSDT)
+    );
+
+endmodule
